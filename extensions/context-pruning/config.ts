@@ -59,6 +59,7 @@ export const PRUNABLE_TOOLS: readonly string[] = [
 	"ls",
 	"edit",
 	"write",
+	"apply_patch",
 ];
 
 // ============================================================================

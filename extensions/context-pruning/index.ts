@@ -64,18 +64,6 @@ export default function contextPruning(pi: ExtensionAPI) {
 
 		const result = pruneToolOutputs(event.messages, config);
 
-		// Always show scan stats so user can see the extension is working
-		if (result.stats.totalToolTokens > 0) {
-			const scanned = formatTokens(result.stats.totalToolTokens);
-			const pruned = result.stats.messagesPruned > 0
-				? `pruned ~${formatTokens(result.stats.tokensPruned)}`
-				: `waiting (need ${formatTokens(config.pruneProtect + config.pruneMinimum - result.stats.totalToolTokens)} more)`;
-			ctx.ui.setStatus(
-				"context-pruning",
-				`🔪 ${scanned} tool tokens scanned | ${pruned} | ${result.stats.messagesProtected} protected`,
-			);
-		}
-
 		if (result.stats.messagesPruned > 0) {
 			// Accumulate session stats
 			sessionStats.messagesPruned += result.stats.messagesPruned;
@@ -85,7 +73,12 @@ export default function contextPruning(pi: ExtensionAPI) {
 			lastPruneStats = result.stats;
 			pruneCount++;
 
+			ctx.ui.setStatus("context-pruning", `🔪 ~${formatTokens(sessionStats.tokensPruned)} pruned`);
 			return { messages: result.messages };
+		}
+
+		if (result.stats.totalToolTokens > 0) {
+			ctx.ui.setStatus("context-pruning", `🔪 ${formatTokens(result.stats.totalToolTokens)} scanned`);
 		}
 
 		return undefined; // Pass through unchanged

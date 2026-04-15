@@ -1,6 +1,6 @@
 {
 	"name": "pi-context-pruning",
-	"version": "1.0.0",
+	"version": "1.0.2",
 	"description": "OpenCode-style proactive tool output pruning for pi — reduce token usage by pruning stale tool outputs before each LLM call",
 	"keywords": ["pi-package"],
 	"license": "MIT",
