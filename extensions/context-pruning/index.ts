@@ -12,6 +12,7 @@
  *   { "contextPruning": { "enabled": false } }
  *
  * Commands:
+ *   /prune        — Force prune on next LLM call (bypasses minimum threshold)
  *   /prune-stats  — Show pruning statistics for the current session
  *   /prune-config — Show current pruning configuration
  */
@@ -27,6 +28,7 @@ export default function contextPruning(pi: ExtensionAPI) {
 	let sessionStats: PruneStats = emptyStats();
 	let lastPruneStats: PruneStats | null = null;
 	let pruneCount = 0;
+	let forceNextPrune = false;
 
 	function emptyStats(): PruneStats {
 		return {
@@ -45,6 +47,7 @@ export default function contextPruning(pi: ExtensionAPI) {
 		sessionStats = emptyStats();
 		lastPruneStats = null;
 		pruneCount = 0;
+		forceNextPrune = false;
 
 		// Reload enabled setting from settings.json
 		const enabled = loadEnabledFromSettings(ctx.cwd);
@@ -60,9 +63,13 @@ export default function contextPruning(pi: ExtensionAPI) {
 	// ========================================================================
 
 	pi.on("context", async (event, ctx) => {
-		if (!config.enabled) return undefined;
+		if (!config.enabled && !forceNextPrune) return undefined;
 
-		const result = pruneToolOutputs(event.messages, config);
+		// If forced, bypass the minimum threshold
+		const effectiveConfig = forceNextPrune ? { ...config, enabled: true, pruneMinimum: 0 } : config;
+		forceNextPrune = false;
+
+		const result = pruneToolOutputs(event.messages, effectiveConfig);
 
 		if (result.stats.messagesPruned > 0) {
 			// Accumulate session stats
@@ -135,6 +142,18 @@ export default function contextPruning(pi: ExtensionAPI) {
 				ctx.ui.setStatus("context-pruning", "🔪 context pruning disabled");
 				ctx.ui.notify("Context pruning disabled", "info");
 			}
+		},
+	});
+
+	pi.registerCommand("prune", {
+		description: "Force prune tool outputs on the next LLM call (bypasses minimum threshold)",
+		handler: async (_args, ctx) => {
+			forceNextPrune = true;
+			ctx.ui.notify(
+				"Forced prune queued — will prune on next LLM call (minimum threshold bypassed).",
+				"info",
+			);
+			ctx.ui.setStatus("context-pruning", "🔪 forced prune pending...");
 		},
 	});
 

@@ -85,6 +85,7 @@ Before each LLM call, via pi's `context` event:
 
 | Command | Description |
 |---------|-------------|
+| `/prune` | Force prune now — bypasses minimum threshold, runs on next LLM call |
 | `/prune-toggle` | Toggle pruning on/off for the current session |
 | `/prune-stats` | Show pruning statistics for the current session |
 | `/prune-config` | Show current pruning configuration |
